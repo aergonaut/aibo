@@ -51,15 +51,28 @@ class Worker<T> {
   }
 
   async retry(id: string, context: string) {
+    let message = "";
     switch (context) {
       case "ci/jenkins-unit":
-        console.log(`jenkins test --> ${id}`);
+        message = "jenkins test";
         break;
       case "ci/teamcity":
-        console.log(`teamcity test --> ${id}`);
+        message = "teamcity test";
         break;
     }
-    Promise.resolve(true);
+    return this.addComment(id, message);
+  }
+
+  async addComment(id: string, message: string) {
+    const input = {
+      subjectId: id,
+      body: message
+    };
+    const variables = {
+      input
+    };
+
+    return this.client.mutate({ mutation, variables });
   }
 }
 
