@@ -14,10 +14,11 @@ class Worker<T> {
     this.client = client;
   }
 
-  async work() {
+  async work(): Promise<any> {
     let result = await this.client.query<PullRequestsQuery>({ query });
     const nodes = result.data.viewer.pullRequests.nodes;
     if (nodes !== null) {
+      let promises: Promise<any>[] = [];
       nodes.forEach(node => {
         if (node !== null) {
           const {
@@ -40,17 +41,20 @@ class Worker<T> {
                         RETRYABLE_CONTEXTS.includes(context.context)
                     )
                     .map(context => this.retry(id, context.context));
-                  Promise.all(ops);
+                  promises.push(Promise.all(ops));
                 }
               }
             }
           }
         }
       });
+      return Promise.all(promises);
+    } else {
+      return Promise.resolve(true);
     }
   }
 
-  async retry(id: string, context: string) {
+  async retry(id: string, context: string): Promise<any> {
     let message = "";
     switch (context) {
       case "ci/jenkins-unit":
@@ -63,7 +67,7 @@ class Worker<T> {
     return this.addComment(id, message);
   }
 
-  async addComment(id: string, message: string) {
+  async addComment(id: string, message: string): Promise<any> {
     const input = {
       subjectId: id,
       body: message
